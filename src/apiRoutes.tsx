@@ -54,4 +54,6 @@ export const apiRoutes = {
   plugins: '/api/plugins',
   atakQrString: '/api/atak_qr_string',
   pluginRepo: '/api/plugins/repo',
+  federationServers: '/api/federation/servers',
+  federationHealth: '/api/federation/health',
 };
