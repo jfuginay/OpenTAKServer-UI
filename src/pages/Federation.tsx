@@ -38,6 +38,7 @@ interface FederationServer {
     port: number;
     connection_type: string;
     protocol_version: string;
+    transport_protocol: string;
     use_tls: boolean;
     verify_ssl: boolean;
     ca_certificate?: string;
@@ -59,7 +60,7 @@ interface FederationStatus {
 export default function FederationPage() {
     const [federations, setFederations] = useState<TableData>({
         caption: '',
-        head: ['Name', 'Address', 'Connection', 'Protocol', 'Status', 'Enabled', 'Actions'],
+        head: ['Name', 'Address', 'Connection', 'Protocol', 'Transport', 'Status', 'Enabled', 'Actions'],
         body: [],
     });
 
@@ -79,6 +80,7 @@ export default function FederationPage() {
         port: 9000,
         connection_type: 'OUTBOUND',
         protocol_version: 'FEDERATION_V2',
+        transport_protocol: 'TCP',
         use_tls: true,
         verify_ssl: true,
         ca_certificate: '',
@@ -101,7 +103,7 @@ export default function FederationPage() {
                 if (r.status === 200) {
                     const tableData: TableData = {
                         caption: '',
-                        head: ['Name', 'Address', 'Connection', 'Protocol', 'Status', 'Enabled', 'Actions'],
+                        head: ['Name', 'Address', 'Connection', 'Protocol', 'Transport', 'Status', 'Enabled', 'Actions'],
                         body: [],
                     };
 
@@ -133,9 +135,17 @@ export default function FederationPage() {
                                 <Badge color={fed.protocol_version === 'FEDERATION_V2' ? 'green' : 'yellow'}>
                                     {fed.protocol_version === 'FEDERATION_V2' ? 'V2' : 'V1'}
                                 </Badge>
+                            </div>,
+                            <div key={`${fed.id}_transport`}>
+                                <Badge color={
+                                    fed.transport_protocol === 'TCP' ? 'blue' :
+                                    fed.transport_protocol === 'UDP' ? 'orange' : 'grape'
+                                }>
+                                    {fed.transport_protocol || 'TCP'}
+                                </Badge>
                                 {fed.use_tls && (
                                     <Badge color="cyan" ml="xs">
-                                        TLS
+                                        {fed.transport_protocol === 'TCP' ? 'TLS' : 'DTLS'}
                                     </Badge>
                                 )}
                             </div>,
@@ -269,6 +279,7 @@ export default function FederationPage() {
             port: federation.port,
             connection_type: federation.connection_type,
             protocol_version: federation.protocol_version,
+            transport_protocol: federation.transport_protocol || 'TCP',
             use_tls: federation.use_tls,
             verify_ssl: federation.verify_ssl,
             ca_certificate: federation.ca_certificate || '',
@@ -369,6 +380,7 @@ export default function FederationPage() {
             port: 9000,
             connection_type: 'OUTBOUND',
             protocol_version: 'FEDERATION_V2',
+            transport_protocol: 'TCP',
             use_tls: true,
             verify_ssl: true,
             ca_certificate: '',
@@ -431,8 +443,19 @@ export default function FederationPage() {
                     value={formData.protocol_version}
                     onChange={(val) => setFormData({ ...formData, protocol_version: val || 'FEDERATION_V2' })}
                 />
+                <Select
+                    label="Transport Protocol"
+                    required
+                    data={[
+                        { value: 'TCP', label: 'TCP (Transmission Control Protocol)' },
+                        { value: 'UDP', label: 'UDP (User Datagram Protocol)' },
+                        { value: 'MULTICAST', label: 'Multicast (UDP Multicast)' },
+                    ]}
+                    value={formData.transport_protocol}
+                    onChange={(val) => setFormData({ ...formData, transport_protocol: val || 'TCP' })}
+                />
                 <Checkbox
-                    label="Use TLS (Recommended)"
+                    label={formData.transport_protocol === 'TCP' ? 'Use TLS (Recommended)' : 'Use DTLS (Datagram TLS)'}
                     checked={formData.use_tls}
                     onChange={(e) => setFormData({ ...formData, use_tls: e.currentTarget.checked })}
                 />
