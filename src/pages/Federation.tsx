@@ -2,6 +2,7 @@ import {
     Badge,
     Button,
     Checkbox,
+    FileButton,
     Group,
     Modal,
     NumberInput,
@@ -24,6 +25,7 @@ import {
     IconRefresh,
     IconToggleLeft,
     IconToggleRight,
+    IconUpload,
     IconX,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -107,12 +109,12 @@ export default function FederationPage() {
                         body: [],
                     };
 
-                    const servers = Array.isArray(r.data) ? r.data : [];
+                    const servers = r.data.servers || [];
                     servers.forEach((fed: FederationServer) => {
                         const statusColor =
-                            fed.status === 'CONNECTED'
+                            fed.status === 'connected'
                                 ? 'green'
-                                : fed.status === 'ERROR'
+                                : fed.status === 'error'
                                 ? 'red'
                                 : 'gray';
 
@@ -128,12 +130,12 @@ export default function FederationPage() {
                             <Text key={`${fed.id}_addr`}>
                                 {fed.address}:{fed.port}
                             </Text>,
-                            <Badge key={`${fed.id}_conn_type`} color={fed.connection_type === 'OUTBOUND' ? 'blue' : 'purple'}>
-                                {fed.connection_type}
+                            <Badge key={`${fed.id}_conn_type`} color={fed.connection_type === 'outbound' ? 'blue' : 'purple'}>
+                                {fed.connection_type.toUpperCase()}
                             </Badge>,
                             <div key={`${fed.id}_protocol`}>
-                                <Badge color={fed.protocol_version === 'FEDERATION_V2' ? 'green' : 'yellow'}>
-                                    {fed.protocol_version === 'FEDERATION_V2' ? 'V2' : 'V1'}
+                                <Badge color={fed.protocol_version === 'v2' ? 'green' : 'yellow'}>
+                                    {fed.protocol_version === 'v2' ? 'V2' : 'V1'}
                                 </Badge>
                             </div>,
                             <div key={`${fed.id}_transport`}>
@@ -398,6 +400,30 @@ export default function FederationPage() {
         });
     }
 
+    function handleFileUpload(file: File | null, fieldName: 'ca_certificate' | 'client_certificate' | 'client_key') {
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const content = e.target?.result as string;
+            if (content) {
+                setFormData({ ...formData, [fieldName]: content });
+                notifications.show({
+                    message: `${file.name} uploaded successfully`,
+                    color: 'green',
+                });
+            }
+        };
+        reader.onerror = () => {
+            notifications.show({
+                title: 'Error',
+                message: `Failed to read ${file.name}`,
+                color: 'red',
+            });
+        };
+        reader.readAsText(file);
+    }
+
     function renderFormFields() {
         return (
             <Stack>
@@ -476,27 +502,69 @@ export default function FederationPage() {
                             checked={formData.verify_ssl}
                             onChange={(e) => setFormData({ ...formData, verify_ssl: e.currentTarget.checked })}
                         />
-                        <Textarea
-                            label="CA Certificate (PEM format)"
-                            placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
-                            value={formData.ca_certificate}
-                            onChange={(e) => setFormData({ ...formData, ca_certificate: e.currentTarget.value })}
-                            minRows={4}
-                        />
-                        <Textarea
-                            label="Client Certificate (PEM format)"
-                            placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
-                            value={formData.client_certificate}
-                            onChange={(e) => setFormData({ ...formData, client_certificate: e.currentTarget.value })}
-                            minRows={4}
-                        />
-                        <Textarea
-                            label="Client Private Key (PEM format)"
-                            placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
-                            value={formData.client_key}
-                            onChange={(e) => setFormData({ ...formData, client_key: e.currentTarget.value })}
-                            minRows={4}
-                        />
+                        <div>
+                            <Group mb="xs">
+                                <Text size="sm" fw={500}>CA Certificate (PEM format)</Text>
+                                <FileButton
+                                    onChange={(file) => handleFileUpload(file, 'ca_certificate')}
+                                    accept=".pem,.crt,.cer"
+                                >
+                                    {(props) => (
+                                        <Button {...props} size="xs" leftSection={<IconUpload size={14} />} variant="light">
+                                            Upload File
+                                        </Button>
+                                    )}
+                                </FileButton>
+                            </Group>
+                            <Textarea
+                                placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+                                value={formData.ca_certificate}
+                                onChange={(e) => setFormData({ ...formData, ca_certificate: e.currentTarget.value })}
+                                minRows={4}
+                            />
+                        </div>
+                        <div>
+                            <Group mb="xs">
+                                <Text size="sm" fw={500}>Client Certificate (PEM format)</Text>
+                                <FileButton
+                                    onChange={(file) => handleFileUpload(file, 'client_certificate')}
+                                    accept=".pem,.crt,.cer"
+                                >
+                                    {(props) => (
+                                        <Button {...props} size="xs" leftSection={<IconUpload size={14} />} variant="light">
+                                            Upload File
+                                        </Button>
+                                    )}
+                                </FileButton>
+                            </Group>
+                            <Textarea
+                                placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+                                value={formData.client_certificate}
+                                onChange={(e) => setFormData({ ...formData, client_certificate: e.currentTarget.value })}
+                                minRows={4}
+                            />
+                        </div>
+                        <div>
+                            <Group mb="xs">
+                                <Text size="sm" fw={500}>Client Private Key (PEM format)</Text>
+                                <FileButton
+                                    onChange={(file) => handleFileUpload(file, 'client_key')}
+                                    accept=".pem,.key"
+                                >
+                                    {(props) => (
+                                        <Button {...props} size="xs" leftSection={<IconUpload size={14} />} variant="light">
+                                            Upload File
+                                        </Button>
+                                    )}
+                                </FileButton>
+                            </Group>
+                            <Textarea
+                                placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
+                                value={formData.client_key}
+                                onChange={(e) => setFormData({ ...formData, client_key: e.currentTarget.value })}
+                                minRows={4}
+                            />
+                        </div>
                     </>
                 )}
                 <Group>
