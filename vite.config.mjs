@@ -4,6 +4,23 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+      },
+      '/Marti': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+      },
+      '/socket.io': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        ws: true,
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
